@@ -2,7 +2,7 @@
 // Pixel Art Sprite System — Draws fighters programmatically
 // ============================================================
 
-import { CANVAS_HEIGHT, CANVAS_WIDTH, Fighter, FighterState, GROUND_Y } from '../fighters/types';
+import { CANVAS_HEIGHT, CANVAS_WIDTH, Fighter, FighterState, GROUND_Y } from './fighters/types';
 
 // Each sprite is a grid of pixel colors. null = transparent.
 type SpriteFrame = (string | null)[][];
@@ -29,14 +29,27 @@ export function drawFighter(
         ctx.translate(-fighter.x, 0);
     }
 
-    const drawX = fighter.x - spriteWidth / 2;
-    const drawY = fighter.y - spriteHeight;
+    // Hit recoil wobble — shake the sprite when hit or stunned
+    const isHit = fighter.state === 'hit' || fighter.state === 'stunned';
+    let offsetX = 0;
+    let offsetY = 0;
+    if (isHit && fighter.stateFrame < 8) {
+        const intensity = 1 - fighter.stateFrame / 8;
+        offsetX = Math.sin(fighter.stateFrame * 2.5) * 3 * intensity;
+        offsetY = Math.abs(Math.cos(fighter.stateFrame * 3)) * 2 * intensity;
+    }
+
+    const drawX = fighter.x - spriteWidth / 2 + offsetX;
+    const drawY = fighter.y - spriteHeight + offsetY;
+
+    // White flash overlay on first few frames of being hit
+    const flashWhite = isHit && fighter.stateFrame < 3;
 
     for (let row = 0; row < sprite.length; row++) {
         for (let col = 0; col < sprite[row].length; col++) {
             const color = sprite[row][col];
             if (color) {
-                ctx.fillStyle = color;
+                ctx.fillStyle = flashWhite ? '#ffffff' : color;
                 ctx.fillRect(
                     drawX + col * pixelSize,
                     drawY + row * pixelSize,
@@ -45,6 +58,18 @@ export function drawFighter(
                 );
             }
         }
+    }
+
+    // Neon hit glow around fighter when freshly hit
+    if (isHit && fighter.stateFrame < 6) {
+        const glowAlpha = 0.6 * (1 - fighter.stateFrame / 6);
+        ctx.globalAlpha = glowAlpha;
+        ctx.shadowColor = '#ff3366';
+        ctx.shadowBlur = 12;
+        ctx.strokeStyle = '#ff3366';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(drawX - 2, drawY - 2, spriteWidth + 4, spriteHeight + 4);
+        ctx.globalAlpha = 1;
     }
 
     ctx.restore();
@@ -341,30 +366,66 @@ export function drawNeonGlow(
 }
 
 /**
- * Draw hit impact particles
+ * Draw hit impact particles — big sparks, impact lines, and flash
  */
 export function drawHitParticles(
     ctx: CanvasRenderingContext2D,
     x: number, y: number,
     frame: number, color: string
 ): void {
-    const particles = 5;
-    const maxLife = 12;
+    const maxLife = 15;
     const life = frame % maxLife;
 
     if (life >= maxLife) return;
 
     ctx.save();
-    ctx.globalAlpha = 1 - life / maxLife;
 
-    for (let i = 0; i < particles; i++) {
-        const angle = (Math.PI * 2 / particles) * i + frame * 0.1;
-        const dist = life * 3;
+    // Impact flash — bright circle on first few frames
+    if (life < 4) {
+        const flashAlpha = 0.9 * (1 - life / 4);
+        const flashRadius = 8 + life * 4;
+        ctx.globalAlpha = flashAlpha;
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(x, y, flashRadius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = flashAlpha * 0.6;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 16;
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(x, y, flashRadius * 0.7, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+    }
+
+    // Impact lines — radial slashes
+    ctx.globalAlpha = Math.max(0, 1 - life / maxLife);
+    const lineCount = 6;
+    for (let i = 0; i < lineCount; i++) {
+        const angle = (Math.PI * 2 / lineCount) * i + 0.3;
+        const innerDist = 4 + life * 2;
+        const outerDist = 10 + life * 3.5;
+
+        ctx.strokeStyle = i % 2 === 0 ? '#ffffff' : color;
+        ctx.lineWidth = Math.max(0.5, 2 - life * 0.15);
+        ctx.beginPath();
+        ctx.moveTo(x + Math.cos(angle) * innerDist, y + Math.sin(angle) * innerDist);
+        ctx.lineTo(x + Math.cos(angle) * outerDist, y + Math.sin(angle) * outerDist);
+        ctx.stroke();
+    }
+
+    // Sparks — scattered pixel particles
+    const sparkCount = 8;
+    ctx.globalAlpha = Math.max(0, 0.9 - life / maxLife);
+    for (let i = 0; i < sparkCount; i++) {
+        const angle = (Math.PI * 2 / sparkCount) * i + life * 0.15;
+        const dist = life * 4 + i * 1.5;
         const px = x + Math.cos(angle) * dist;
-        const py = y + Math.sin(angle) * dist;
-        const size = Math.max(1, 3 - life * 0.3);
+        const py = y + Math.sin(angle) * dist - life * 0.8; // drift upward
+        const size = Math.max(1, 3 - life * 0.2);
 
-        ctx.fillStyle = i % 2 === 0 ? color : '#ffffff';
+        ctx.fillStyle = i % 3 === 0 ? '#ffffff' : i % 3 === 1 ? color : '#ffcc00';
         ctx.fillRect(px, py, size, size);
     }
 

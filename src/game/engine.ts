@@ -10,8 +10,9 @@ import {
     createFighter, startPunch, applyHit, updateFighter,
     moveFighter, setBlocking, checkHit, resetFighter,
 } from './fighters/fighter';
-import { PUNCH_DEFS } from './combat/punches';
+import { PUNCH_DEFS, HEAVY_PUNCH_BONUS } from './combat/punches';
 import { detectCombo } from './combat/combos';
+import { getCounterStrikeMultiplier, COUNTER_STRIKE_DISPLAY } from './combat/counterstrike';
 import { createInputState, attachInputListeners, clearPressedFlags } from './input';
 import { drawFighter, drawHitParticles } from './sprites';
 import { drawBackground, drawAtmosphere } from './background';
@@ -193,7 +194,16 @@ function update(state: GameState): void {
         const combo = detectCombo(player.comboHistory, Date.now());
         const comboMult = combo ? combo.bonusDamageMultiplier : 1.0;
 
-        const result = applyHit(opponent, player, comboMult);
+        // Heavy punch bonus (hook/uppercut)
+        const punchType = player.currentPunch?.type;
+        const heavyBonus = punchType ? HEAVY_PUNCH_BONUS[punchType] : undefined;
+        const heavyMult = heavyBonus ? heavyBonus.multiplier : 1.0;
+
+        // Counter-strike bonus (punishes opponent spam)
+        const counterStrike = getCounterStrikeMultiplier(opponent);
+
+        const finalMult = Math.min(2.5, comboMult * heavyMult * counterStrike.multiplier);
+        const result = applyHit(opponent, player, finalMult);
 
         if (result.damage > 0) {
             if (!result.blocked) {
@@ -205,14 +215,20 @@ function update(state: GameState): void {
                 });
                 state.screenShake = Math.min(12, result.damage * 0.5);
 
+                // Text priority: combo > heavy punch > counter-strike
                 if (combo) {
                     state.comboText = combo.displayName;
-                    state.comboTextTimer = 90; // 1.5 seconds
-                    // Extra stun from combo
+                    state.comboTextTimer = 90;
                     if (opponent.state === 'hit') {
                         opponent.state = 'stunned';
                         opponent.stateFrame = 0;
                     }
+                } else if (heavyBonus) {
+                    state.comboText = heavyBonus.displayName;
+                    state.comboTextTimer = 60;
+                } else if (counterStrike.isCounterStrike) {
+                    state.comboText = COUNTER_STRIKE_DISPLAY;
+                    state.comboTextTimer = 60;
                 }
             }
         }
@@ -223,7 +239,16 @@ function update(state: GameState): void {
         const combo = detectCombo(opponent.comboHistory, Date.now());
         const comboMult = combo ? combo.bonusDamageMultiplier : 1.0;
 
-        const result = applyHit(player, opponent, comboMult);
+        // Heavy punch bonus
+        const oppPunchType = opponent.currentPunch?.type;
+        const oppHeavyBonus = oppPunchType ? HEAVY_PUNCH_BONUS[oppPunchType] : undefined;
+        const oppHeavyMult = oppHeavyBonus ? oppHeavyBonus.multiplier : 1.0;
+
+        // Counter-strike bonus (punishes player spam)
+        const oppCounterStrike = getCounterStrikeMultiplier(player);
+
+        const oppFinalMult = Math.min(2.5, comboMult * oppHeavyMult * oppCounterStrike.multiplier);
+        const result = applyHit(player, opponent, oppFinalMult);
 
         if (result.damage > 0 && !result.blocked) {
             hitParticles.push({
@@ -233,6 +258,11 @@ function update(state: GameState): void {
                 color: opponent.spriteAccentColor,
             });
             state.screenShake = Math.min(8, result.damage * 0.3);
+
+            if (oppCounterStrike.isCounterStrike) {
+                state.comboText = COUNTER_STRIKE_DISPLAY;
+                state.comboTextTimer = 60;
+            }
         }
     }
 

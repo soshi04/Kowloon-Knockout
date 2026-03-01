@@ -9,7 +9,7 @@ export const PUNCH_DEFS: Record<PunchType, PunchDef> = {
         type: 'jab',
         baseDamage: 5,
         speed: 8,       // fastest
-        range: 35,      // quick straight punch
+        range: 48,      // longest reach — quick straight punch
         staminaCost: 5,
         knockback: 2,
         stunFrames: 4,
@@ -18,7 +18,7 @@ export const PUNCH_DEFS: Record<PunchType, PunchDef> = {
         type: 'cross',
         baseDamage: 10,
         speed: 14,
-        range: 40,      // longest reach — full extension from rear hand
+        range: 45,      // rear hand extension, slightly shorter than jab
         staminaCost: 10,
         knockback: 5,
         stunFrames: 8,
@@ -27,20 +27,26 @@ export const PUNCH_DEFS: Record<PunchType, PunchDef> = {
         type: 'hook',
         baseDamage: 15,
         speed: 20,
-        range: 32,      // wide arc, shorter reach
+        range: 42,      // wide arc, needs to be closer
         staminaCost: 15,
         knockback: 8,
         stunFrames: 12,
     },
     uppercut: {
         type: 'uppercut',
-        baseDamage: 25,
+        baseDamage: 18,
         speed: 28,      // slowest
-        range: 28,      // shortest range — need to be very close
+        range: 40,      // shortest range — need to be very close
         staminaCost: 25,
-        knockback: 12,
-        stunFrames: 18,
+        knockback: 10,
+        stunFrames: 14,
     },
+};
+
+/** Bonus multiplier for landing heavy punches (hook/uppercut) */
+export const HEAVY_PUNCH_BONUS: Partial<Record<PunchType, { multiplier: number; displayName: string }>> = {
+    hook: { multiplier: 1.15, displayName: 'HEAVY HOOK!' },
+    uppercut: { multiplier: 1.15, displayName: 'CRUSHING UPPERCUT!' },
 };
 
 /**

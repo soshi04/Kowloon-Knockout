@@ -8,17 +8,16 @@ import { CLASS_STATS } from '@/game/fighters/stats';
 
 const CLASSES: FighterClass[] = ['power', 'speed', 'resistance'];
 
-// Opponent class is random but different from player
-function pickOpponent(playerClass: FighterClass): FighterClass {
-    const others = CLASSES.filter(c => c !== playerClass);
-    return others[Math.floor(Math.random() * others.length)];
+// Opponent class is random — can be any class including mirror matches
+function pickOpponent(): FighterClass {
+    return CLASSES[Math.floor(Math.random() * CLASSES.length)];
 }
 
 export default function CharacterSelect() {
     const { selectedClass, setSelectedClass, setOpponentClass, setPhase } = useGameStore();
 
     const handleFight = () => {
-        setOpponentClass(pickOpponent(selectedClass));
+        setOpponentClass(pickOpponent());
         setPhase('fight');
     };
 

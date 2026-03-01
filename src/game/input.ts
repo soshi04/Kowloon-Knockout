@@ -2,7 +2,7 @@
 // Input Handler — Keyboard mapping for boxing controls
 // ============================================================
 
-import { InputState } from '../fighters/types';
+import { InputState } from './fighters/types';
 
 export function createInputState(): InputState {
     return {
@@ -48,7 +48,7 @@ export function attachInputListeners(state: InputState): () => void {
             if (mapped === 'hook' && !state.hook) state.hookPressed = true;
             if (mapped === 'uppercut' && !state.uppercut) state.uppercutPressed = true;
 
-            (state as Record<string, boolean>)[mapped] = true;
+            (state as unknown as Record<string, boolean>)[mapped] = true;
         }
     };
 
@@ -57,7 +57,7 @@ export function attachInputListeners(state: InputState): () => void {
         const mapped = KEY_MAP[key];
         if (mapped) {
             e.preventDefault();
-            (state as Record<string, boolean>)[mapped] = false;
+            (state as unknown as Record<string, boolean>)[mapped] = false;
         }
     };
 

@@ -3,10 +3,12 @@
 import { motion } from 'framer-motion';
 import { useGameStore } from '@/stores/gameStore';
 import { useEffect, useState } from 'react';
+import { COMBO_DEFS } from '@/game/combat/combos';
 
 export default function MainMenu() {
     const { setPhase } = useGameStore();
     const [showControls, setShowControls] = useState(false);
+    const [showCombos, setShowCombos] = useState(false);
     const [flickerClass, setFlickerClass] = useState('');
 
     useEffect(() => {
@@ -63,11 +65,20 @@ export default function MainMenu() {
 
                     <motion.button
                         className="neon-button neon-button-controls"
-                        onClick={() => setShowControls(!showControls)}
+                        onClick={() => { setShowControls(!showControls); setShowCombos(false); }}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                     >
                         HOW TO PLAY
+                    </motion.button>
+
+                    <motion.button
+                        className="neon-button neon-button-controls"
+                        onClick={() => { setShowCombos(!showCombos); setShowControls(false); }}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                    >
+                        COMBOS
                     </motion.button>
                 </motion.div>
 
@@ -145,6 +156,44 @@ export default function MainMenu() {
                         <button
                             className="neon-button neon-button-close"
                             onClick={() => setShowControls(false)}
+                        >
+                            CLOSE
+                        </button>
+                    </motion.div>
+                )}
+
+                {/* Combos modal */}
+                {showCombos && (
+                    <motion.div
+                        className="controls-modal"
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.3 }}
+                    >
+                        <h2 className="controls-title">COMBOS</h2>
+                        <div className="controls-grid">
+                            <div className="controls-section combos-section">
+                                {COMBO_DEFS.map((combo) => {
+                                    const keyMap: Record<string, string> = {
+                                        jab: 'J', cross: 'K', hook: 'L', uppercut: 'U',
+                                    };
+                                    return (
+                                        <div className="control-row" key={combo.name}>
+                                            <span className="combo-keys">
+                                                {combo.sequence.map(p => keyMap[p]).join(' → ')}
+                                            </span>
+                                            <span>
+                                                {combo.displayName.replace(/[★!]/g, '').trim()}{' '}
+                                                <small>(+{Math.round((combo.bonusDamageMultiplier - 1) * 100)}%)</small>
+                                            </span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                        <button
+                            className="neon-button neon-button-close"
+                            onClick={() => setShowCombos(false)}
                         >
                             CLOSE
                         </button>
