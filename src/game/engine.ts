@@ -247,8 +247,8 @@ function update(state: GameState): void {
         return p.frame < 15;
     });
 
-    // Prevent fighters from overlapping
-    const minDist = 30;
+    // Prevent fighters from overlapping (fighters are 40px wide, so 40px = touching)
+    const minDist = 38;
     const dist = Math.abs(player.x - opponent.x);
     if (dist < minDist) {
         const overlap = minDist - dist;

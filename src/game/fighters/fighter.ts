@@ -234,7 +234,7 @@ export function checkHit(attacker: Fighter, target: Fighter): boolean {
     if (attacker.punchFrame !== hitWindowStart) return false;
 
     const distance = Math.abs(attacker.x - target.x);
-    return distance <= attacker.currentPunch.range + 15; // +15 for body width
+    return distance <= attacker.currentPunch.range;
 }
 
 /**

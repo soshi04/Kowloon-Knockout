@@ -22,11 +22,11 @@ export function drawFighter(
 
     ctx.save();
 
-    // Flip horizontally if facing left
+    // Flip horizontally if facing left (mirror around fighter center)
     if (!fighter.facingRight) {
-        ctx.translate(fighter.x + spriteWidth / 2, 0);
+        ctx.translate(fighter.x, 0);
         ctx.scale(-1, 1);
-        ctx.translate(-(fighter.x + spriteWidth / 2), 0);
+        ctx.translate(-fighter.x, 0);
     }
 
     const drawX = fighter.x - spriteWidth / 2;
@@ -134,12 +134,9 @@ function getPunchingSprite(
     outline: string, shoe: string, c: string, a: string, _: null, frame: number
 ): SpriteFrame {
     const punchType = fighter.currentPunch?.type || 'jab';
-    const isUppercut = punchType === 'uppercut';
-    const isHook = punchType === 'hook';
 
-    // Extended arm for punch — wider sprite
-    return [
-        // Head
+    // Head rows — shared base, uppercut modifies to show fist going up
+    const headRows: SpriteFrame = [
         [_, _, _, _, _, _, _, hair, hair, hair, hair, hair, hair, _, _, _, _, _, _, _, _, _, _, _, _],
         [_, _, _, _, _, _, hair, hair, hair, hair, hair, hair, hair, hair, _, _, _, _, _, _, _, _, _, _, _],
         [_, _, _, _, _, hair, hair, hair, hair, hair, hair, hair, hair, hair, hair, _, _, _, _, _, _, _, _, _, _],
@@ -148,24 +145,68 @@ function getPunchingSprite(
         [_, _, _, _, _, skin, skin, skin, skin, skin, skin, skin, skin, skin, skin, _, _, _, _, _, _, _, _, _, _],
         [_, _, _, _, _, skin, skin, skin, skin, outline, outline, skin, skin, skin, skin, _, _, _, _, _, _, _, _, _, _],
         [_, _, _, _, _, _, skin, skin, skin, skin, skin, skin, skin, skin, _, _, _, _, _, _, _, _, _, _, _],
-        // Neck
         [_, _, _, _, _, _, _, _, skin, skin, skin, skin, _, _, _, _, _, _, _, _, _, _, _, _, _],
-        // Body — punching arm extended
+    ];
+
+    // Shoulder rows — shared base, uppercut modifies to show arm going up
+    const shoulderRows: SpriteFrame = [
         [_, _, _, _, outline, c, c, c, c, c, c, c, c, c, c, outline, _, _, _, _, _, _, _, _, _],
         [_, _, _, outline, c, c, c, c, c, c, c, c, c, c, c, c, outline, _, _, _, _, _, _, _, _],
-        [_, _, _, outline, c, c, c, c, c, c, c, c, c, c, c, c, skin, skin, skin, skin, _, _, _, _, _],
-        // Lead arm extended, rear arm guard
-        ...(isUppercut ? [
-            [_, _, glove, glove, skin, skin, c, c, c, c, c, c, c, c, skin, skin, skin, skin, glove, glove, _, _, _, _, _] as (string | null)[],
-            [_, _, glove, glove, _, _, c, c, c, c, c, c, c, c, _, _, _, _, glove, glove, _, _, _, _, _] as (string | null)[],
-        ] : [
-            [_, _, glove, glove, skin, skin, c, c, c, c, c, c, c, c, skin, skin, skin, skin, skin, skin, glove, glove, glove, _, _] as (string | null)[],
-            [_, _, glove, glove, _, _, c, c, c, c, c, c, c, c, _, _, _, _, _, _, glove, glove, glove, _, _] as (string | null)[],
-        ]),
+    ];
+
+    if (punchType === 'uppercut') {
+        // Glove above head, arm travels upward on the right side
+        headRows[0] = [_, _, _, _, _, _, _, hair, hair, hair, hair, hair, hair, _, _, glove, glove, _, _, _, _, _, _, _, _];
+        headRows[1] = [_, _, _, _, _, _, hair, hair, hair, hair, hair, hair, hair, hair, _, glove, glove, _, _, _, _, _, _, _, _];
+        headRows[2] = [_, _, _, _, _, hair, hair, hair, hair, hair, hair, hair, hair, hair, hair, skin, _, _, _, _, _, _, _, _, _];
+        headRows[3] = [_, _, _, _, _, outline, skin, skin, skin, skin, skin, skin, skin, skin, outline, skin, _, _, _, _, _, _, _, _, _];
+        shoulderRows[0] = [_, _, _, _, outline, c, c, c, c, c, c, c, c, c, c, skin, _, _, _, _, _, _, _, _, _];
+        shoulderRows[1] = [_, _, _, outline, c, c, c, c, c, c, c, c, c, c, c, skin, _, _, _, _, _, _, _, _, _];
+    }
+
+    // Arm rows differ by punch type
+    let armRows: SpriteFrame;
+
+    switch (punchType) {
+        case 'jab':
+            // Lead (front) hand extends forward at medium distance, rear hand guards
+            armRows = [
+                [_, _, _, outline, c, c, c, c, c, c, c, c, c, c, c, c, skin, skin, skin, _, _, _, _, _, _],
+                [_, _, glove, glove, skin, skin, c, c, c, c, c, c, c, c, _, _, skin, skin, glove, glove, _, _, _, _, _],
+                [_, _, glove, glove, _, _, c, c, c, c, c, c, c, c, _, _, _, _, glove, glove, _, _, _, _, _],
+            ];
+            break;
+        case 'cross':
+            // Rear (back) hand extends far forward, lead hand guards near body
+            armRows = [
+                [_, _, _, outline, c, c, c, c, c, c, c, c, c, c, c, c, skin, skin, skin, skin, _, _, _, _, _],
+                [_, _, _, _, _, _, c, c, c, c, c, c, c, c, glove, glove, skin, skin, skin, skin, skin, skin, glove, glove, glove],
+                [_, _, _, _, _, _, c, c, c, c, c, c, c, c, glove, glove, _, _, _, _, _, _, glove, glove, glove],
+            ];
+            break;
+        case 'hook':
+            // Lead hand swings in a wide arc — arm curves down then out
+            armRows = [
+                [_, _, _, outline, c, c, c, c, c, c, c, c, c, c, c, c, skin, _, _, _, _, _, _, _, _],
+                [_, _, glove, glove, skin, skin, c, c, c, c, c, c, c, c, _, _, skin, _, _, _, _, _, _, _, _],
+                [_, _, glove, glove, _, _, c, c, c, c, c, c, c, c, _, _, skin, glove, glove, glove, _, _, _, _, _],
+            ];
+            break;
+        case 'uppercut':
+        default:
+            // Rear hand guards, front arm angled upward (glove placed near head above)
+            armRows = [
+                [_, _, _, outline, c, c, c, c, c, c, c, c, c, c, c, c, skin, _, _, _, _, _, _, _, _],
+                [_, _, glove, glove, skin, skin, c, c, c, c, c, c, c, c, _, _, skin, _, _, _, _, _, _, _, _],
+                [_, _, glove, glove, _, _, c, c, c, c, c, c, c, c, _, _, _, _, _, _, _, _, _, _, _],
+            ];
+            break;
+    }
+
+    // Lower body — same for all punches
+    const lowerBody: SpriteFrame = [
         [_, _, _, _, _, _, c, c, c, c, c, c, c, c, _, _, _, _, _, _, _, _, _, _, _],
-        // Belt
         [_, _, _, _, _, _, a, a, a, a, a, a, a, a, _, _, _, _, _, _, _, _, _, _, _],
-        // Shorts + legs (same as idle but slightly shifted)
         [_, _, _, _, _, shorts, shorts, shorts, shorts, _, _, shorts, shorts, shorts, shorts, _, _, _, _, _, _, _, _, _, _],
         [_, _, _, _, _, shorts, shorts, shorts, shorts, _, _, shorts, shorts, shorts, shorts, _, _, _, _, _, _, _, _, _, _],
         [_, _, _, _, _, shorts, shorts, shorts, _, _, _, _, shorts, shorts, shorts, _, _, _, _, _, _, _, _, _, _],
@@ -175,6 +216,8 @@ function getPunchingSprite(
         [_, _, _, _, _, shoe, shoe, shoe, shoe, _, _, shoe, shoe, shoe, shoe, _, _, _, _, _, _, _, _, _, _],
         [_, _, _, _, _, shoe, shoe, shoe, shoe, _, _, shoe, shoe, shoe, shoe, _, _, _, _, _, _, _, _, _, _],
     ];
+
+    return [...headRows, ...shoulderRows, ...armRows, ...lowerBody];
 }
 
 function getBlockingSprite(

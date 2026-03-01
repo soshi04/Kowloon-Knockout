@@ -58,8 +58,8 @@ export function updateAI(
 
     const distance = Math.abs(opponent.x - player.x);
     const isPlayerPunching = player.state === 'punching';
-    const isInRange = distance < 55;
-    const isCloseRange = distance < 40;
+    const isInRange = distance < 42;
+    const isCloseRange = distance < 32;
 
     // React to player punches
     if (isPlayerPunching && isInRange && Math.random() < ai.difficulty * 0.6) {
@@ -73,7 +73,7 @@ export function updateAI(
         case 'idle':
             if (ai.actionTimer > 30 - ai.difficulty * 20) {
                 // Decide next action
-                if (distance > 80) {
+                if (distance > 60) {
                     ai.currentAction = 'approach';
                 } else if (isInRange && Math.random() < 0.4 + ai.difficulty * 0.3) {
                     ai.currentAction = 'attack';
@@ -187,7 +187,7 @@ export function updateAI(
 
 function pickSinglePunch(distance: number, difficulty: number): PunchType {
     // Weight punches based on distance and difficulty
-    if (distance < 35) {
+    if (distance < 32) {
         // Close range — uppercuts and hooks more likely
         const roll = Math.random();
         if (roll < 0.3 * difficulty) return 'uppercut';
