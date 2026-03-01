@@ -5,7 +5,7 @@
 export type FighterClass = 'power' | 'speed' | 'resistance';
 export type PunchType = 'jab' | 'cross' | 'hook' | 'uppercut';
 export type FighterState = 'idle' | 'walking' | 'punching' | 'blocking' | 'hit' | 'stunned' | 'knockedOut';
-export type GamePhase = 'menu' | 'select' | 'fight' | 'countdown' | 'result';
+export type GamePhase = 'menu' | 'select' | 'fight' | 'countdown' | 'roundEnd' | 'result';
 export type FightResult = 'ko' | 'tko' | 'decision' | null;
 
 export interface FighterStats {
@@ -73,6 +73,8 @@ export interface GameState {
   screenShake: number;
   isPaused: boolean;
   countdownValue: number;
+  roundEndTimer: number;
+  roundEndText: string;
 }
 
 export interface InputState {

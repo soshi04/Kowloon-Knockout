@@ -146,7 +146,7 @@ export function updateFighter(fighter: Fighter): void {
                 fighter.state = 'idle';
                 break;
             }
-            const punchDuration = calculatePunchSpeed(fighter.currentPunch, fighter.stats.punchSpeed);
+            const punchDuration = calculatePunchSpeed(fighter.currentPunch, fighter.stats.punchSpeed, fighter.stats.moveSpeed);
             fighter.punchFrame++;
             if (fighter.punchFrame >= punchDuration) {
                 fighter.state = 'idle';
@@ -225,7 +225,7 @@ export function checkHit(attacker: Fighter, target: Fighter): boolean {
     if (attacker.state !== 'punching' || !attacker.currentPunch) return false;
 
     // Hit only connects at the "peak" of the punch animation (around 40-60% through)
-    const punchDuration = calculatePunchSpeed(attacker.currentPunch, attacker.stats.punchSpeed);
+    const punchDuration = calculatePunchSpeed(attacker.currentPunch, attacker.stats.punchSpeed, attacker.stats.moveSpeed);
     const hitWindowStart = Math.floor(punchDuration * 0.35);
     const hitWindowEnd = Math.floor(punchDuration * 0.55);
 

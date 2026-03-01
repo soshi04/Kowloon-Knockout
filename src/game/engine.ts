@@ -43,7 +43,7 @@ export function initGame(
 
     inputState = createInputState();
     cleanupInput = attachInputListeners(inputState);
-    aiState = createAIState(0.55);
+    aiState = createAIState(0.55, opponentClass);
 
     // Create game state
     gameState = {
@@ -51,8 +51,8 @@ export function initGame(
         opponent: createFighter(opponentClass, RING_RIGHT - 80, false, 'CPU'),
         round: 1,
         maxRounds: 3,
-        roundTime: 60 * 99, // 99 seconds at 60fps
-        maxRoundTime: 60 * 99,
+        roundTime: 60 * 60, // 60 seconds at 60fps
+        maxRoundTime: 60 * 60,
         playerScore: 0,
         opponentScore: 0,
         phase: 'countdown',
@@ -62,6 +62,8 @@ export function initGame(
         screenShake: 0,
         isPaused: false,
         countdownValue: 3,
+        roundEndTimer: 0,
+        roundEndText: '',
     };
 
     gameFrame = 0;
@@ -81,6 +83,14 @@ export function initGame(
             gameState.countdownValue = Math.max(0, 3 - Math.floor(countdownFrames / 60));
             if (countdownFrames >= 240) { // 4 seconds (3, 2, 1, FIGHT!)
                 gameState.phase = 'fight';
+            }
+        }
+
+        if (gameState.phase === 'roundEnd') {
+            gameState.roundEndTimer--;
+            if (gameState.roundEndTimer <= 0) {
+                finishRoundEnd(gameState);
+                countdownFrames = 0;
             }
         }
 
@@ -234,11 +244,14 @@ function update(state: GameState): void {
     if (player.state === 'knockedOut' || opponent.state === 'knockedOut') {
         if (player.state === 'knockedOut') {
             state.opponentScore++;
+            state.roundEndText = 'K.O.';
         } else {
             state.playerScore++;
+            state.roundEndText = 'K.O.';
         }
         state.result = 'ko';
-        state.phase = 'result';
+        state.phase = 'roundEnd';
+        state.roundEndTimer = 180; // 3 seconds
     }
 
     // === Update particles ===
@@ -270,10 +283,24 @@ function endRound(state: GameState): void {
 
     if (playerHpPct > opponentHpPct) {
         state.playerScore++;
+        state.roundEndText = 'PLAYER WINS';
     } else if (opponentHpPct > playerHpPct) {
         state.opponentScore++;
+        state.roundEndText = 'CPU WINS';
+    } else {
+        state.roundEndText = 'DRAW';
     }
-    // tie = no score change
+
+    state.phase = 'roundEnd';
+    state.roundEndTimer = 180; // 3 seconds at 60fps
+}
+
+function finishRoundEnd(state: GameState): void {
+    if (state.result === 'ko') {
+        // KO already scored — go straight to result
+        state.phase = 'result';
+        return;
+    }
 
     if (state.round >= state.maxRounds || state.playerScore >= 2 || state.opponentScore >= 2) {
         state.result = 'decision';
@@ -325,6 +352,11 @@ function render(ctx: CanvasRenderingContext2D, state: GameState): void {
         drawCountdown(ctx, state);
     }
 
+    // Round end overlay
+    if (state.phase === 'roundEnd') {
+        drawRoundEnd(ctx, state);
+    }
+
     ctx.restore();
 }
 
@@ -332,13 +364,13 @@ function render(ctx: CanvasRenderingContext2D, state: GameState): void {
  * Draw in-game HUD (health bars, stamina, round, timer, combo text)
  */
 function drawHUD(ctx: CanvasRenderingContext2D, state: GameState): void {
-    const barWidth = 150;
+    const barWidth = 130;
     const barHeight = 8;
     const barY = 8;
     const staminaBarHeight = 4;
 
     // === Player health bar (left side) ===
-    const playerX = 15;
+    const playerX = 20;
 
     // Background
     ctx.fillStyle = '#0a0a0a';
@@ -376,7 +408,7 @@ function drawHUD(ctx: CanvasRenderingContext2D, state: GameState): void {
     ctx.shadowBlur = 0;
 
     // === Opponent health bar (right side, fills right to left) ===
-    const oppX = CANVAS_WIDTH - barWidth - 15;
+    const oppX = CANVAS_WIDTH - barWidth - 20;
 
     ctx.fillStyle = '#0a0a0a';
     ctx.fillRect(oppX, barY, barWidth, barHeight);
@@ -476,6 +508,80 @@ function drawCountdown(ctx: CanvasRenderingContext2D, state: GameState): void {
     ctx.shadowBlur = 12;
     ctx.fillText(text, centerX, centerY);
     ctx.restore();
+}
+
+/**
+ * Draw round-end animation overlay
+ */
+function drawRoundEnd(ctx: CanvasRenderingContext2D, state: GameState): void {
+    const centerX = CANVAS_WIDTH / 2;
+    const centerY = CANVAS_HEIGHT / 2 - 10;
+    const totalDuration = 180;
+    const elapsed = totalDuration - state.roundEndTimer;
+    const progress = elapsed / totalDuration; // 0 → 1
+
+    // Darken background — fades in
+    const bgAlpha = Math.min(0.6, progress * 2);
+    ctx.fillStyle = `rgba(0, 0, 0, ${bgAlpha})`;
+    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+    // Horizontal neon lines sweep in from edges
+    const lineProgress = Math.min(1, progress * 3);
+    const lineWidth = CANVAS_WIDTH * lineProgress;
+    const lineColor = state.roundEndText === 'K.O.' ? '#ff3366' : '#ffcc00';
+
+    ctx.save();
+    ctx.shadowColor = lineColor;
+    ctx.shadowBlur = 8;
+    ctx.strokeStyle = lineColor;
+    ctx.lineWidth = 1;
+    ctx.globalAlpha = Math.min(1, progress * 4);
+
+    // Top line
+    ctx.beginPath();
+    ctx.moveTo(centerX - lineWidth / 2, centerY - 22);
+    ctx.lineTo(centerX + lineWidth / 2, centerY - 22);
+    ctx.stroke();
+
+    // Bottom line
+    ctx.beginPath();
+    ctx.moveTo(centerX - lineWidth / 2, centerY + 18);
+    ctx.lineTo(centerX + lineWidth / 2, centerY + 18);
+    ctx.stroke();
+    ctx.restore();
+
+    // Main text — scales in then settles
+    if (progress > 0.15) {
+        const textProgress = Math.min(1, (progress - 0.15) * 2.5);
+        const scale = 1 + (1 - textProgress) * 0.8; // starts big, settles to 1x
+        const textAlpha = Math.min(1, textProgress * 3);
+
+        ctx.save();
+        ctx.globalAlpha = textAlpha;
+        ctx.translate(centerX, centerY);
+        ctx.scale(scale, scale);
+
+        ctx.fillStyle = lineColor;
+        ctx.font = 'bold 18px monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.shadowColor = lineColor;
+        ctx.shadowBlur = 12;
+        ctx.fillText(state.roundEndText, 0, 0);
+        ctx.restore();
+    }
+
+    // Score display — fades in later
+    if (progress > 0.5) {
+        const scoreAlpha = Math.min(1, (progress - 0.5) * 3);
+        ctx.save();
+        ctx.globalAlpha = scoreAlpha;
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '8px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(`${state.playerScore} - ${state.opponentScore}`, centerX, centerY + 30);
+        ctx.restore();
+    }
 }
 
 // Export for external control

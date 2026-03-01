@@ -60,8 +60,12 @@ export function calculateDamage(
 }
 
 /**
- * Calculate actual punch speed (in frames) given fighter punchSpeed stat
+ * Calculate actual punch speed (in frames) given fighter stats.
+ * Both punchSpeed and moveSpeed contribute — faster fighters strike faster.
  */
-export function calculatePunchSpeed(punch: PunchDef, punchSpeedStat: number): number {
-    return Math.max(4, Math.floor(punch.speed / punchSpeedStat));
+export function calculatePunchSpeed(punch: PunchDef, punchSpeedStat: number, moveSpeed?: number): number {
+    // moveSpeed contributes a 20% bonus to strike speed (baseline moveSpeed ~2.0)
+    const moveSpeedBonus = moveSpeed ? 1 + (moveSpeed - 2.0) * 0.2 : 1;
+    const effectiveSpeed = punchSpeedStat * moveSpeedBonus;
+    return Math.max(4, Math.floor(punch.speed / effectiveSpeed));
 }
