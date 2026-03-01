@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { useGameStore } from '@/stores/gameStore';
 import { CLASS_DISPLAY } from '@/game/fighters/stats';
+import { networkClient } from '@/network/client';
 
 export default function ResultScreen() {
     const {
@@ -10,8 +11,27 @@ export default function ResultScreen() {
         playerHealth, opponentHealth,
         playerMaxHealth, opponentMaxHealth,
         selectedClass, opponentClass,
+        isMultiplayer,
         setPhase, resetGame
     } = useGameStore();
+
+    const handleFightAgain = () => {
+        if (isMultiplayer) {
+            networkClient.disconnect();
+            networkClient.clearHandlers();
+        }
+        resetGame();
+        setPhase('select');
+    };
+
+    const handleMainMenu = () => {
+        if (isMultiplayer) {
+            networkClient.disconnect();
+            networkClient.clearHandlers();
+        }
+        resetGame();
+        setPhase('menu');
+    };
 
     const playerHpPct = Math.round((playerHealth / playerMaxHealth) * 100);
     const opponentHpPct = Math.round((opponentHealth / opponentMaxHealth) * 100);
@@ -102,7 +122,7 @@ export default function ResultScreen() {
                 >
                     <motion.button
                         className="neon-button neon-button-fight"
-                        onClick={() => setPhase('select')}
+                        onClick={handleFightAgain}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                     >
@@ -110,10 +130,7 @@ export default function ResultScreen() {
                     </motion.button>
                     <button
                         className="neon-button neon-button-back"
-                        onClick={() => {
-                            resetGame();
-                            setPhase('menu');
-                        }}
+                        onClick={handleMainMenu}
                     >
                         MAIN MENU
                     </button>

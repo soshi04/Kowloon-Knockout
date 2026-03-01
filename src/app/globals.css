@@ -321,6 +321,18 @@ body {
   box-shadow: 0 0 20px rgba(255, 51, 102, 0.5), inset 0 0 20px rgba(255, 51, 102, 0.2);
 }
 
+.neon-button-versus {
+  color: var(--neon-purple);
+  border-color: var(--neon-purple);
+  text-shadow: 0 0 8px var(--neon-purple);
+  box-shadow: 0 0 10px rgba(204, 51, 255, 0.3), inset 0 0 10px rgba(204, 51, 255, 0.1);
+}
+
+.neon-button-versus:hover {
+  background: rgba(204, 51, 255, 0.15);
+  box-shadow: 0 0 20px rgba(204, 51, 255, 0.5), inset 0 0 20px rgba(204, 51, 255, 0.2);
+}
+
 .neon-button-controls {
   color: var(--neon-blue);
   border-color: var(--neon-blue);
@@ -712,4 +724,97 @@ body {
   display: flex;
   gap: 16px;
   margin-top: 16px;
+}
+
+/* ============================================================
+   Multiplayer Lobby
+   ============================================================ */
+
+.lobby-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+}
+
+.lobby-title {
+  font-size: 24px;
+  letter-spacing: 4px;
+  color: var(--neon-purple);
+  text-shadow: 0 0 10px var(--neon-purple), 0 0 20px var(--neon-purple);
+}
+
+.lobby-buttons {
+  display: flex;
+  gap: 16px;
+}
+
+.lobby-room-code {
+  font-size: 48px;
+  letter-spacing: 12px;
+  color: var(--neon-yellow);
+  text-shadow: 0 0 10px var(--neon-yellow), 0 0 20px var(--neon-yellow), 0 0 40px var(--neon-yellow);
+  font-family: var(--font-pixel);
+}
+
+.lobby-status {
+  font-size: 12px;
+  color: var(--text-dim);
+  letter-spacing: 2px;
+  animation: lobby-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes lobby-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+.lobby-input {
+  font-size: 24px;
+  letter-spacing: 8px;
+  text-align: center;
+  width: 180px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.6);
+  border: 2px solid var(--neon-purple);
+  color: var(--neon-yellow);
+  font-family: var(--font-pixel);
+  text-transform: uppercase;
+  outline: none;
+}
+
+.lobby-input:focus {
+  box-shadow: 0 0 15px rgba(204, 51, 255, 0.5), inset 0 0 10px rgba(204, 51, 255, 0.1);
+}
+
+.lobby-input::placeholder {
+  color: var(--text-dim);
+  letter-spacing: 4px;
+  font-size: 14px;
+}
+
+.lobby-error {
+  font-size: 11px;
+  color: var(--neon-pink);
+  text-shadow: 0 0 6px var(--neon-pink);
+}
+
+.lobby-match-info {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  font-size: 14px;
+  letter-spacing: 2px;
+}
+
+.lobby-match-vs {
+  color: var(--text-dim);
+  font-size: 10px;
+}
+
+.lobby-match-player {
+  text-transform: uppercase;
 }

@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { COMBO_DEFS } from '@/game/combat/combos';
 
 export default function MainMenu() {
-    const { setPhase } = useGameStore();
+    const { setPhase, setMultiplayer } = useGameStore();
     const [showControls, setShowControls] = useState(false);
     const [showCombos, setShowCombos] = useState(false);
     const [flickerClass, setFlickerClass] = useState('');
@@ -61,6 +61,15 @@ export default function MainMenu() {
                         whileTap={{ scale: 0.95 }}
                     >
                         FIGHT
+                    </motion.button>
+
+                    <motion.button
+                        className="neon-button neon-button-versus"
+                        onClick={() => { setMultiplayer(true); setPhase('select'); }}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                    >
+                        VERSUS
                     </motion.button>
 
                     <motion.button

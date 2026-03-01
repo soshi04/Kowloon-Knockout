@@ -2,6 +2,7 @@
 
 import { useRef, useEffect, useCallback } from 'react';
 import { initGame } from '@/game/engine';
+import { initMultiplayerGame } from '@/game/multiplayerEngine';
 import { useGameStore } from '@/stores/gameStore';
 import type { GameState } from '@/game/fighters/types';
 import { CANVAS_WIDTH, CANVAS_HEIGHT, SCALE } from '@/game/fighters/types';
@@ -9,7 +10,7 @@ import { CANVAS_WIDTH, CANVAS_HEIGHT, SCALE } from '@/game/fighters/types';
 export default function GameCanvas() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const cleanupRef = useRef<(() => void) | null>(null);
-    const { selectedClass, opponentClass, setPhase, updateFightState } = useGameStore();
+    const { selectedClass, opponentClass, isMultiplayer, isHost, setPhase, updateFightState } = useGameStore();
 
     const onStateChange = useCallback((state: GameState) => {
         updateFightState({
@@ -39,7 +40,11 @@ export default function GameCanvas() {
         canvas.width = CANVAS_WIDTH;
         canvas.height = CANVAS_HEIGHT;
 
-        cleanupRef.current = initGame(canvas, selectedClass, opponentClass, onStateChange);
+        if (isMultiplayer) {
+            cleanupRef.current = initMultiplayerGame(canvas, selectedClass, opponentClass, isHost, onStateChange);
+        } else {
+            cleanupRef.current = initGame(canvas, selectedClass, opponentClass, onStateChange);
+        }
 
         return () => {
             if (cleanupRef.current) {
@@ -47,7 +52,7 @@ export default function GameCanvas() {
                 cleanupRef.current = null;
             }
         };
-    }, [selectedClass, opponentClass, onStateChange]);
+    }, [selectedClass, opponentClass, isMultiplayer, isHost, onStateChange]);
 
     return (
         <div className="game-canvas-container">

@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import { useGameStore } from '@/stores/gameStore';
 import MainMenu from '@/components/MainMenu';
 import CharacterSelect from '@/components/CharacterSelect';
+import MultiplayerLobby from '@/components/MultiplayerLobby';
 import ResultScreen from '@/components/ResultScreen';
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -46,6 +47,19 @@ export default function Home() {
             style={{ width: '100%', height: '100%' }}
           >
             <CharacterSelect />
+          </motion.div>
+        )}
+
+        {phase === 'lobby' && (
+          <motion.div
+            key="lobby"
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -50 }}
+            transition={{ duration: 0.4 }}
+            style={{ width: '100%', height: '100%' }}
+          >
+            <MultiplayerLobby />
           </motion.div>
         )}
 

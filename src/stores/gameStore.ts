@@ -5,6 +5,8 @@
 import { create } from 'zustand';
 import type { FighterClass, GamePhase, FightResult } from '@/game/fighters/types';
 
+export type ConnectionStatus = 'disconnected' | 'connecting' | 'waiting' | 'ready' | 'playing';
+
 interface GameStore {
     // Game phase
     phase: GamePhase;
@@ -21,6 +23,17 @@ interface GameStore {
     opponentWins: number;
     incrementPlayerWins: () => void;
     incrementOpponentWins: () => void;
+
+    // Multiplayer state
+    isMultiplayer: boolean;
+    isHost: boolean;
+    roomCode: string | null;
+    connectionStatus: ConnectionStatus;
+    setMultiplayer: (isMultiplayer: boolean) => void;
+    setIsHost: (isHost: boolean) => void;
+    setRoomCode: (code: string | null) => void;
+    setConnectionStatus: (status: ConnectionStatus) => void;
+    resetMultiplayer: () => void;
 
     // Fight state (from engine)
     playerHealth: number;
@@ -69,6 +82,16 @@ export const useGameStore = create<GameStore>((set) => ({
     incrementPlayerWins: () => set((s) => ({ playerWins: s.playerWins + 1 })),
     incrementOpponentWins: () => set((s) => ({ opponentWins: s.opponentWins + 1 })),
 
+    isMultiplayer: false,
+    isHost: false,
+    roomCode: null,
+    connectionStatus: 'disconnected',
+    setMultiplayer: (isMultiplayer) => set({ isMultiplayer }),
+    setIsHost: (isHost) => set({ isHost }),
+    setRoomCode: (roomCode) => set({ roomCode }),
+    setConnectionStatus: (connectionStatus) => set({ connectionStatus }),
+    resetMultiplayer: () => set({ isMultiplayer: false, isHost: false, roomCode: null, connectionStatus: 'disconnected' }),
+
     playerHealth: 100,
     opponentHealth: 100,
     playerMaxHealth: 100,
@@ -89,5 +112,9 @@ export const useGameStore = create<GameStore>((set) => ({
         playerWins: 0,
         opponentWins: 0,
         result: null,
+        isMultiplayer: false,
+        isHost: false,
+        roomCode: null,
+        connectionStatus: 'disconnected',
     }),
 }));

@@ -14,11 +14,20 @@ function pickOpponent(): FighterClass {
 }
 
 export default function CharacterSelect() {
-    const { selectedClass, setSelectedClass, setOpponentClass, setPhase } = useGameStore();
+    const { selectedClass, setSelectedClass, setOpponentClass, setPhase, isMultiplayer, resetMultiplayer } = useGameStore();
 
     const handleFight = () => {
-        setOpponentClass(pickOpponent());
-        setPhase('fight');
+        if (isMultiplayer) {
+            setPhase('lobby');
+        } else {
+            setOpponentClass(pickOpponent());
+            setPhase('fight');
+        }
+    };
+
+    const handleBack = () => {
+        resetMultiplayer();
+        setPhase('menu');
     };
 
     return (
@@ -108,7 +117,7 @@ export default function CharacterSelect() {
             >
                 <button
                     className="neon-button neon-button-back"
-                    onClick={() => setPhase('menu')}
+                    onClick={handleBack}
                 >
                     BACK
                 </button>

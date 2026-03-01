@@ -313,10 +313,10 @@ function endRound(state: GameState): void {
 
     if (playerHpPct > opponentHpPct) {
         state.playerScore++;
-        state.roundEndText = 'PLAYER WINS';
+        state.roundEndText = `${state.player.displayName} WINS`;
     } else if (opponentHpPct > playerHpPct) {
         state.opponentScore++;
-        state.roundEndText = 'CPU WINS';
+        state.roundEndText = `${state.opponent.displayName} WINS`;
     } else {
         state.roundEndText = 'DRAW';
     }
